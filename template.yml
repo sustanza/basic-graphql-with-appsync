@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ProjectName:
+    Type: String
+  AWSProfile:
+    Type: String
+
+Globals:
+  Function:
+    Handler: handler
+    Runtime: go1.x
+    Tracing: Active
+
+#############################################################################################
+#								Resources
+#############################################################################################
+
+Resources:
+
+  #############################################################################################
+  #								AppSync API
+  #############################################################################################
+
+  AppSyncAPI:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: !Ref ProjectName
+      AuthenticationType: API_KEY
+
+  AppSyncSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt [ AppSyncAPI, ApiId ]
+      Definition: |
+        type Coffee @aws_api_key {
+            id: ID!
+        	name: String!
+            origin: String!
+            roast: String!
+        }
+
+        input CreateCoffee @aws_api_key {
+        	name: String!
+            origin: String!
+            roast: String!
+        }
+
+        input UpdateCoffee @aws_api_key {
+            id: ID!
+        	name: String
+            origin: String
+            roast: String
+        }
+
+        input DeleteCoffee @aws_api_key {
+            id: ID
+        	name: String
+            origin: String
+            roast: String
+        }
+
+        input RandomCoffees @aws_api_key {
+        	quantity: Int
+        }
+
+        type CoffeeConnection @aws_api_key {
+        	items: [Coffee]
+        	nextToken: String
+        }
+
+        type RandomCoffeeResult @aws_api_key {
+        	coffees: [Coffee]
+        }
+
+        type Query @aws_api_key {
+        	getCoffee(id: ID!): Coffee
+            allCoffees(nextToken: String): CoffeeConnection
+            getRandomCoffees(input: RandomCoffees): RandomCoffeeResult
+        }
+
+        type Mutation @aws_api_key {
+        	createCoffee(input: CreateCoffee!): Coffee
+        	updateCoffee(input: UpdateCoffee!): Coffee
+        	deleteCoffee(input: DeleteCoffee!): Coffee
+        }
+
+        schema {
+        	query: Query
+            mutation: Mutation
+        }
+
+  AppSyncAPIKey:
+    Type: AWS::AppSync::ApiKey
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+    DependsOn:
+      - AppSyncAPI
+
+  #############################################################################################
+  #								DynamoDB Tables
+  #############################################################################################
+
+  CoffeeTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Join [ -, [!Ref ProjectName, "coffee" ] ]
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  ##############################################################################################
+  ##								AppSync Datasources
+  ##############################################################################################
+
+  AppSyncCoffeeDataSourceDynamo:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      Name: "coffee_table"
+      Description: "The Deployment status AppSync Data Source"
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: !GetAtt AppSyncIAMRole.Arn
+      DynamoDBConfig:
+        TableName: !Ref CoffeeTable
+        AwsRegion: !Sub ${AWS::Region}
+
+  AppSyncDataSourceGetRandomCoffeesLambda:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      Name: getRandomCoffees
+      Type: AWS_LAMBDA
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt LambdaGetRandomCoffees.Arn
+      ServiceRoleArn: !GetAtt AppSyncIAMRole.Arn
+
+  ##############################################################################################
+  #								AppSync Resolvers
+  ##############################################################################################
+  AppSyncGetCoffeeResolver:
+    Type: "AWS::AppSync::Resolver"
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: getCoffee
+      DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2017-02-28",
+          "operation": "GetItem",
+          "key": {
+            "id": $util.dynamodb.toDynamoDBJson($ctx.args.id),
+          }
+        }
+      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+
+  AppSyncCreateCoffeeResolver:
+    Type: "AWS::AppSync::Resolver"
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: createCoffee
+      DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
+      RequestMappingTemplate: |
+        {
+          "version" : "2017-02-28",
+          "operation" : "PutItem",
+          "key" : {
+            ## If object "id" should come from GraphQL arguments, change to $util.dynamodb.toDynamoDBJson($ctx.args.id)
+            "id": $util.dynamodb.toDynamoDBJson($util.autoId()),
+          },
+          "attributeValues" : $util.dynamodb.toMapValuesJson($ctx.args.input)
+        }
+      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+
+  AppSyncAllCoffeeResolver:
+    Type: "AWS::AppSync::Resolver"
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: allCoffees
+      DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
+      RequestMappingTemplate: |
+        {
+           "version" : "2017-02-28",
+           "operation" : "Scan"
+          ,"limit": 15
+             #if( ${context.arguments.nextToken} )
+          ,"nextToken": "${context.arguments.nextToken}"
+          #end
+        }
+      ResponseMappingTemplate: |
+        {
+            "items": $utils.toJson($context.result.items)
+            #if( ${context.result.nextToken} )
+                ,"nextToken": "${context.result.nextToken}"
+            #end
+        }
+
+  AppSyncDeleteCoffeeMutationResolver:
+    Type: "AWS::AppSync::Resolver"
+    DependsOn: AppSyncSchema
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Mutation
+      FieldName: deleteCoffee
+      DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2017-02-28",
+          "operation": "DeleteItem",
+          "key": {
+            "id": $util.dynamodb.toDynamoDBJson($ctx.args.input.id),
+          },
+        }
+      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+
+  AppSyncResolverGetRandomCoffees:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      TypeName: Query
+      FieldName: getRandomCoffees
+      DataSourceName: !GetAtt AppSyncDataSourceGetRandomCoffeesLambda.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2017-02-28",
+          "operation": "Invoke",
+          "payload": $util.toJson($context.args.input)
+        }
+      ResponseMappingTemplate: |
+        #if($ctx.error)
+          $util.error($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($context.result)
+
+  #############################################################################################
+  #                             IAM Roles and Policies
+  #############################################################################################
+  AppSyncIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ -, [!Ref ProjectName, "iam-role"] ]
+      ManagedPolicyArns:
+        - Ref: AppSyncPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+    DependsOn:
+      - AppSyncAPI
+      - AppSyncPolicy
+
+  AppSyncPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Managed policy to allow AWS AppSync to access the table
+      Path: /appsync/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:DeleteItem
+              - dynamodb:UpdateItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+            Resource:
+              - !GetAtt CoffeeTable.Arn
+          - Effect: Allow
+            Action:
+              - lambda:invokeFunction
+            Resource:
+              - !GetAtt LambdaGetRandomCoffees.Arn
+
+  LambdaGetRandomCoffeesIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ -, [!Ref ProjectName, "get-random-coffees-iam-role"] ]
+      ManagedPolicyArns:
+        - Ref: LambdaGetRandomCoffeesPolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+  LambdaGetRandomCoffeesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Managed policy to allow AWS AppSync to access the tables created by this template.
+      Path: /appsync/
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:Scan
+            Resource:
+              - !GetAtt CoffeeTable.Arn
+          - Effect: Allow
+            Action:
+              - xray:PutTraceSegments
+              - xray:PutTelemetryRecords
+            Resource:
+              - "*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - "*"
+
+  #############################################################################################
+  #                            Lambda
+  #############################################################################################
+
+  LambdaGetRandomCoffees:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub get-random-coffees
+      CodeUri: ./dist/getRandomCoffees
+      Timeout: 20
+      Role: !GetAtt LambdaGetRandomCoffeesIAMRole.Arn
+      Environment:
+        Variables:
+          COFFEE_TABLE_NAME: !Ref CoffeeTable
+
+#############################################################################################
+#                            Outputs
+#############################################################################################
+
+Outputs:
+  GraphQL:
+    Description: GraphQL URL
+    Value: !GetAtt [ AppSyncAPI, GraphQLUrl ]
+  AppsyncApiKey:
+    Description: GraphQL API Key
+    Value: !GetAtt [ AppSyncAPIKey, ApiKey ]
