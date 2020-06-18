@@ -113,7 +113,7 @@ Resources:
       FieldName: allCoffees
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items-response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.response
 
   AppSyncDeleteCoffeeMutationResolver:
     Type: "AWS::AppSync::Resolver"
