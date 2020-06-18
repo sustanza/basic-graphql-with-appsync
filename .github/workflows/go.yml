@@ -39,7 +39,8 @@ jobs:
       run: make configure
       
     - name: Cloudformation package
+      if: always()
       run: make package
-  
+
     - name: Cloudformation Deploy
       run: make deploy
