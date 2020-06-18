@@ -35,10 +35,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.GH_ACTIONS_AWS_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: Deploy to AWS CloudFormation
-      uses: aws-actions/aws-cloudformation-github-deploy@v1
-      with:
-        name: basic-graphql-with-appsync-test
-        template: template.yml
-        capabilities: CAPABILITY_AUTO_EXPAND
-        parameter-overrides: "ProjectName=basic-graphql-with-appsync,AWSProfile=default"
+    - name: Configure S3 buckets for bins / cf stack
+      run: make configure
+      
+    - name: Cloudformation package
+      run: make package
+  
+    - name: Cloudformation Deploy
+      run: make deploy
