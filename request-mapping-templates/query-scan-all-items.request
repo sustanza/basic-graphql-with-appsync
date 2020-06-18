@@ -1,0 +1,8 @@
+{
+    "version" : "2017-02-28",
+    "operation" : "Scan"
+    ,"limit": 15
+        #if( ${context.arguments.nextToken} )
+    ,"nextToken": "${context.arguments.nextToken}"
+    #end
+}

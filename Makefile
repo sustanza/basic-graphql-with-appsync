@@ -1,8 +1,7 @@
 #############################################################################################
 #								Build Configuration     									#
 #############################################################################################
-PROJECT_NAME ?= basic-graphql-with-appsync
-AWS_PROFILE ?= stokedbits-blog
+PROJECT_NAME ?= basic-graphql-with-appsync-test
 
 AWS_BUCKET_NAME ?= $(PROJECT_NAME)-artifacts
 AWS_STACK_NAME ?= $(PROJECT_NAME)-stack
@@ -55,20 +54,18 @@ dlv:
 	@ env GOARCH=amd64 GOOS=linux go build -o dist/dlv github.com/go-delve/delve/cmd/dlv
 
 configure:
-	@ aws --profile $(AWS_PROFILE) s3 mb s3://$(AWS_BUCKET_NAME) --region $(AWS_REGION)
-	@ aws --profile $(AWS_PROFILE) s3 mb s3://$(AWS_STACK_NAME) --region $(AWS_REGION)
+	@ aws s3 mb s3://$(AWS_BUCKET_NAME) --region $(AWS_REGION)
+	@ aws s3 mb s3://$(AWS_STACK_NAME) --region $(AWS_REGION)
 
 package:
-	@ aws --profile $(AWS_PROFILE) \
-		cloudformation package \
+	@ aws cloudformation package \
 		--template-file $(FILE_TEMPLATE) \
 		--s3-bucket $(AWS_BUCKET_NAME) \
 		--region $(AWS_REGION) \
 		--output-template-file $(FILE_PACKAGE)
 
 deploy:
-	@ aws --profile $(AWS_PROFILE) \
-		cloudformation deploy \
+	@ aws cloudformation deploy \
 		--template-file $(FILE_PACKAGE) \
 		--region $(AWS_REGION) \
 		--capabilities CAPABILITY_NAMED_IAM \
@@ -79,8 +76,7 @@ deploy:
 			ProjectName=$(PROJECT_NAME) \
 
 describe:
-	@ aws --profile $(AWS_PROFILE) \
-		cloudformation describe-stacks \
+	@ aws cloudformation describe-stacks \
 		--region $(AWS_REGION) \
 		--stack-name $(AWS_STACK_NAME)
 

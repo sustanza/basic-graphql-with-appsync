@@ -4,8 +4,6 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   ProjectName:
     Type: String
-  AWSProfile:
-    Type: String
 
 Globals:
   Function:
@@ -18,7 +16,6 @@ Globals:
 #############################################################################################
 
 Resources:
-
   #############################################################################################
   #								AppSync API
   #############################################################################################
@@ -32,71 +29,13 @@ Resources:
   AppSyncSchema:
     Type: AWS::AppSync::GraphQLSchema
     Properties:
-      ApiId: !GetAtt [ AppSyncAPI, ApiId ]
-      Definition: |
-        type Coffee @aws_api_key {
-            id: ID!
-        	name: String!
-            origin: String!
-            roast: String!
-        }
-
-        input CreateCoffee @aws_api_key {
-        	name: String!
-            origin: String!
-            roast: String!
-        }
-
-        input UpdateCoffee @aws_api_key {
-            id: ID!
-        	name: String
-            origin: String
-            roast: String
-        }
-
-        input DeleteCoffee @aws_api_key {
-            id: ID
-        	name: String
-            origin: String
-            roast: String
-        }
-
-        input RandomCoffees @aws_api_key {
-        	quantity: Int
-        }
-
-        type CoffeeConnection @aws_api_key {
-        	items: [Coffee]
-        	nextToken: String
-        }
-
-        type RandomCoffeeResult @aws_api_key {
-        	coffees: [Coffee]
-        }
-
-        type Query @aws_api_key {
-        	getCoffee(id: ID!): Coffee
-            allCoffees(nextToken: String): CoffeeConnection
-            getRandomCoffees(input: RandomCoffees): RandomCoffeeResult
-        }
-
-        type Mutation @aws_api_key {
-        	createCoffee(input: CreateCoffee!): Coffee
-        	updateCoffee(input: UpdateCoffee!): Coffee
-        	deleteCoffee(input: DeleteCoffee!): Coffee
-        }
-
-        schema {
-        	query: Query
-            mutation: Mutation
-        }
+      ApiId: !GetAtt [AppSyncAPI, ApiId]
+      DefinitionS3Location: ./schema.graphql
 
   AppSyncAPIKey:
     Type: AWS::AppSync::ApiKey
     Properties:
       ApiId: !GetAtt AppSyncAPI.ApiId
-    DependsOn:
-      - AppSyncAPI
 
   #############################################################################################
   #								DynamoDB Tables
@@ -105,7 +44,7 @@ Resources:
   CoffeeTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Join [ -, [!Ref ProjectName, "coffee" ] ]
+      TableName: !Join [-, [!Ref ProjectName, "coffee"]]
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -151,15 +90,8 @@ Resources:
       TypeName: Query
       FieldName: getCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplate: |
-        {
-          "version": "2017-02-28",
-          "operation": "GetItem",
-          "key": {
-            "id": $util.dynamodb.toDynamoDBJson($ctx.args.id),
-          }
-        }
-      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-get-item-by-id.request
+      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
 
   AppSyncCreateCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -169,17 +101,8 @@ Resources:
       TypeName: Mutation
       FieldName: createCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplate: |
-        {
-          "version" : "2017-02-28",
-          "operation" : "PutItem",
-          "key" : {
-            ## If object "id" should come from GraphQL arguments, change to $util.dynamodb.toDynamoDBJson($ctx.args.id)
-            "id": $util.dynamodb.toDynamoDBJson($util.autoId()),
-          },
-          "attributeValues" : $util.dynamodb.toMapValuesJson($ctx.args.input)
-        }
-      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-put-item-by-id.request
+      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
 
   AppSyncAllCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -189,22 +112,8 @@ Resources:
       TypeName: Query
       FieldName: allCoffees
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplate: |
-        {
-           "version" : "2017-02-28",
-           "operation" : "Scan"
-          ,"limit": 15
-             #if( ${context.arguments.nextToken} )
-          ,"nextToken": "${context.arguments.nextToken}"
-          #end
-        }
-      ResponseMappingTemplate: |
-        {
-            "items": $utils.toJson($context.result.items)
-            #if( ${context.result.nextToken} )
-                ,"nextToken": "${context.result.nextToken}"
-            #end
-        }
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.request
+      ResponseMappingTemplateS3Location: ./request-mapping-template/query-scan-all-items-response
 
   AppSyncDeleteCoffeeMutationResolver:
     Type: "AWS::AppSync::Resolver"
@@ -214,15 +123,8 @@ Resources:
       TypeName: Mutation
       FieldName: deleteCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplate: |
-        {
-          "version": "2017-02-28",
-          "operation": "DeleteItem",
-          "key": {
-            "id": $util.dynamodb.toDynamoDBJson($ctx.args.input.id),
-          },
-        }
-      ResponseMappingTemplate: "$util.toJson($ctx.result)"
+      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-delete-item-by-id.request
+      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
 
   AppSyncResolverGetRandomCoffees:
     Type: AWS::AppSync::Resolver
@@ -231,17 +133,8 @@ Resources:
       TypeName: Query
       FieldName: getRandomCoffees
       DataSourceName: !GetAtt AppSyncDataSourceGetRandomCoffeesLambda.Name
-      RequestMappingTemplate: |
-        {
-          "version": "2017-02-28",
-          "operation": "Invoke",
-          "payload": $util.toJson($context.args.input)
-        }
-      ResponseMappingTemplate: |
-        #if($ctx.error)
-          $util.error($ctx.error.message, $ctx.error.type)
-        #end
-        $util.toJson($context.result)
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.request
+      ResponseMappingTemplateS3Location: ./request-mapping-template/query-invoke-lambda.response
 
   #############################################################################################
   #                             IAM Roles and Policies
@@ -249,7 +142,7 @@ Resources:
   AppSyncIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join [ -, [!Ref ProjectName, "iam-role"] ]
+      RoleName: !Join [-, [!Ref ProjectName, "iam-role"]]
       ManagedPolicyArns:
         - Ref: AppSyncPolicy
       AssumeRolePolicyDocument:
@@ -263,7 +156,6 @@ Resources:
                 - appsync.amazonaws.com
     DependsOn:
       - AppSyncAPI
-      - AppSyncPolicy
 
   AppSyncPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -294,7 +186,7 @@ Resources:
   LambdaGetRandomCoffeesIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join [ -, [!Ref ProjectName, "get-random-coffees-iam-role"] ]
+      RoleName: !Join [-, [!Ref ProjectName, "get-random-coffees-iam-role"]]
       ManagedPolicyArns:
         - Ref: LambdaGetRandomCoffeesPolicy
       AssumeRolePolicyDocument:
@@ -342,7 +234,7 @@ Resources:
   LambdaGetRandomCoffees:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub get-random-coffees
+      FunctionName: get-random-coffees
       CodeUri: ./dist/getRandomCoffees
       Timeout: 20
       Role: !GetAtt LambdaGetRandomCoffeesIAMRole.Arn
@@ -357,7 +249,7 @@ Resources:
 Outputs:
   GraphQL:
     Description: GraphQL URL
-    Value: !GetAtt [ AppSyncAPI, GraphQLUrl ]
+    Value: !GetAtt [AppSyncAPI, GraphQLUrl]
   AppsyncApiKey:
     Description: GraphQL API Key
-    Value: !GetAtt [ AppSyncAPIKey, ApiKey ]
+    Value: !GetAtt [AppSyncAPIKey, ApiKey]
