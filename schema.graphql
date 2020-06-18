@@ -1,0 +1,56 @@
+type Coffee @aws_api_key {
+  id: ID!
+  name: String!
+  origin: String!
+  roast: String!
+}
+
+input CreateCoffee @aws_api_key {
+  name: String!
+  origin: String!
+  roast: String!
+}
+
+input UpdateCoffee @aws_api_key {
+  id: ID!
+  name: String
+  origin: String
+  roast: String
+}
+
+input DeleteCoffee @aws_api_key {
+  id: ID
+  name: String
+  origin: String
+  roast: String
+}
+
+input RandomCoffees @aws_api_key {
+  quantity: Int
+}
+
+type CoffeeConnection @aws_api_key {
+  items: [Coffee]
+  nextToken: String
+}
+
+type RandomCoffeeResult @aws_api_key {
+  coffees: [Coffee]
+}
+
+type Query @aws_api_key {
+  getCoffee(id: ID!): Coffee
+  allCoffees(nextToken: String): CoffeeConnection
+  getRandomCoffees(input: RandomCoffees): RandomCoffeeResult
+}
+
+type Mutation @aws_api_key {
+  createCoffee(input: CreateCoffee!): Coffee
+  updateCoffee(input: UpdateCoffee!): Coffee
+  deleteCoffee(input: DeleteCoffee!): Coffee
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

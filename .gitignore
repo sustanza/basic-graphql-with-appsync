@@ -1,6 +1,3 @@
 .vscode
-.idea
-.iml
 package.yml
 dist/
-*.iml
