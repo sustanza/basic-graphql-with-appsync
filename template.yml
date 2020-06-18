@@ -91,7 +91,7 @@ Resources:
       FieldName: getCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/query-get-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
 
   AppSyncCreateCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -102,7 +102,7 @@ Resources:
       FieldName: createCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-put-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
 
   AppSyncAllCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -113,7 +113,7 @@ Resources:
       FieldName: allCoffees
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.request
-      ResponseMappingTemplateS3Location: ./request-mapping-template/query-scan-all-items-response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items-response
 
   AppSyncDeleteCoffeeMutationResolver:
     Type: "AWS::AppSync::Resolver"
@@ -124,7 +124,7 @@ Resources:
       FieldName: deleteCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-delete-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-template/generic-result.response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
 
   AppSyncResolverGetRandomCoffees:
     Type: AWS::AppSync::Resolver
@@ -134,7 +134,7 @@ Resources:
       FieldName: getRandomCoffees
       DataSourceName: !GetAtt AppSyncDataSourceGetRandomCoffeesLambda.Name
       RequestMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.request
-      ResponseMappingTemplateS3Location: ./request-mapping-template/query-invoke-lambda.response
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.response
 
   #############################################################################################
   #                             IAM Roles and Policies
