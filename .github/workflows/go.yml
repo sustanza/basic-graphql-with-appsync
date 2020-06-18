@@ -40,4 +40,5 @@ jobs:
       with:
         name: basic-graphql-with-appsync-test
         template: template.yml
+        capibilities: CAPABILITY_AUTO_EXPAND
         parameter-overrides: "ProjectName=basic-graphql-with-appsync,AWSProfile=default"
