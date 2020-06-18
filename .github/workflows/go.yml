@@ -24,3 +24,6 @@ jobs:
 
     - name: Install Mods
       run: make install
+    
+    - name: Build Project
+      run: make build
