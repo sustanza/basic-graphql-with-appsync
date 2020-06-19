@@ -3,14 +3,15 @@ package main
 import (
 	"basic-graphql-with-appsync/models"
 	"basic-graphql-with-appsync/shared"
+	"log"
+	"math/rand"
+	"os"
+
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
-	"log"
-	"math/rand"
-	"os"
 )
 
 var CoffeeTableName = os.Getenv("COFFEE_TABLE_NAME")
@@ -46,8 +47,8 @@ func handle(payload RandomCoffeesPayload) (RandomCoffeesResult, error) {
 	params := &dynamodb.ScanInput{
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		ProjectionExpression: expr.Projection(),
-		TableName:            aws.String(tableName),
+		ProjectionExpression:      expr.Projection(),
+		TableName:                 aws.String(tableName),
 	}
 
 	result, err := svc.Scan(params)
@@ -80,11 +81,12 @@ func handle(payload RandomCoffeesPayload) (RandomCoffeesResult, error) {
 	return randomCoffeesResult, nil
 }
 
-func inefficientKindaRandomResult(coffees []models.Coffee, quantity int) (randomCoffees []models.Coffee){
+func inefficientKindaRandomResult(coffees []models.Coffee, quantity int) (randomCoffees []models.Coffee) {
 
-	if quantity == nil
+	if quantity == 0 {
 		quantity = 1
-		
+	}
+
 	for i := range coffees {
 		j := rand.Intn(i + 1)
 		coffees[i], coffees[j] = coffees[j], coffees[i]
