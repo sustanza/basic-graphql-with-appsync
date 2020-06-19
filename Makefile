@@ -1,7 +1,7 @@
 #############################################################################################
 #								Build Configuration     									#
 #############################################################################################
-PROJECT_NAME ?= basic-graphql-with-appsync-test
+PROJECT_NAME ?= basic-graphql-with-appsync
 
 AWS_BUCKET_NAME ?= $(PROJECT_NAME)-artifacts
 AWS_STACK_NAME ?= $(PROJECT_NAME)-stack
@@ -79,6 +79,10 @@ describe:
 	@ aws cloudformation describe-stacks \
 		--region $(AWS_REGION) \
 		--stack-name $(AWS_STACK_NAME)
+
+cleanup:
+	@ aws s3 rb s3://$(AWS_BUCKET_NAME) --region $(AWS_REGION) --force
+	@ aws s3 rb s3://$(AWS_STACK_NAME) --region $(AWS_REGION) --force
 
 outputs:
 	@ make describe \
