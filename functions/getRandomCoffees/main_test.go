@@ -4,18 +4,19 @@ import (
 	"basic-graphql-with-appsync/models"
 	"basic-graphql-with-appsync/shared"
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brianvoe/gofakeit/v4"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestGetRandomCoffeesResolver(t *testing.T) {
 	randomCoffeesPayload := RandomCoffeesPayload{
-		Quantity: 3,
+		Quantity: 6,
 	}
 	data, err := handle(randomCoffeesPayload)
 
@@ -23,7 +24,7 @@ func TestGetRandomCoffeesResolver(t *testing.T) {
 		t.Errorf("%s", err.Error())
 	}
 
-	if data.coffees == nil {
+	if data.Coffees == nil {
 		t.Errorf("Must return with coffees")
 	}
 }
@@ -39,7 +40,7 @@ func TestSeedData(t *testing.T) {
 	// Create DynamoDB client
 	svc := dynamodb.New(sess)
 
-	tableName := CoffeeTableName
+	tableName := os.Getenv("COFFEE_TABLE_NAME")
 
 	coffees := [100]*models.Coffee{}
 
@@ -47,8 +48,8 @@ func TestSeedData(t *testing.T) {
 	for i := 0; i < 100; i++ {
 
 		coffees[i] = &models.Coffee{
-			Id:     gofakeit.UUID(),
-			Name:   fmt.Sprintf("%s %s %s %s",
+			Id: gofakeit.UUID(),
+			Name: fmt.Sprintf("%s %s %s %s",
 				Prefix[gofakeit.Number(0, len(Prefix)-1)],
 				Process[gofakeit.Number(0, len(Process)-1)],
 				gofakeit.LastName(),
