@@ -82,6 +82,9 @@ func handle(payload RandomCoffeesPayload) (RandomCoffeesResult, error) {
 
 func inefficientKindaRandomResult(coffees []models.Coffee, quantity int) (randomCoffees []models.Coffee){
 
+	if quantity == nil
+		quantity = 1
+		
 	for i := range coffees {
 		j := rand.Intn(i + 1)
 		coffees[i], coffees[j] = coffees[j], coffees[i]
