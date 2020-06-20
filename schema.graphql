@@ -1,3 +1,6 @@
+"""
+A coffee type for our coffee resource type
+"""
 type Coffee @aws_api_key {
   id: ID!
   name: String!
@@ -5,12 +8,18 @@ type Coffee @aws_api_key {
   roast: String!
 }
 
+"""
+Create coffee input for our coffee resource type
+"""
 input CreateCoffee @aws_api_key {
   name: String!
   origin: String!
   roast: String!
 }
 
+"""
+Update coffee input for our coffee resource type
+"""
 input UpdateCoffee @aws_api_key {
   id: ID!
   name: String
@@ -18,6 +27,9 @@ input UpdateCoffee @aws_api_key {
   roast: String
 }
 
+"""
+Delete coffee input for our coffee resource type
+"""
 input DeleteCoffee @aws_api_key {
   id: ID
   name: String
@@ -25,31 +37,67 @@ input DeleteCoffee @aws_api_key {
   roast: String
 }
 
+"""
+Input for getting a random coffee
+"""
 input RandomCoffees @aws_api_key {
   quantity: Int
 }
 
+"""
+Connection type for our coffee resource to help support pagination
+"""
 type CoffeeConnection @aws_api_key {
   items: [Coffee]
   nextToken: String
 }
 
+"""
+A type for the result of requesting a random coffee
+"""
 type RandomCoffeeResult @aws_api_key {
   coffees: [Coffee]
 }
 
+"""
+The queries our service supports
+"""
 type Query @aws_api_key {
+  """
+  Get a coffee resource by ID
+  """
   getCoffee(id: ID!): Coffee
+  """
+  Get all coffee resources
+  """
   allCoffees(nextToken: String): CoffeeConnection
+  """
+  Get a random set of coffee resources
+  """
   getRandomCoffees(input: RandomCoffees): RandomCoffeeResult
 }
 
+"""
+The mutations our service supports
+"""
 type Mutation @aws_api_key {
+  """
+  Create a coffee resource
+  """
   createCoffee(input: CreateCoffee!): Coffee
+  """
+  Update a coffee resource
+  """
   updateCoffee(input: UpdateCoffee!): Coffee
+  """
+  Delete a coffee resource
+  """
   deleteCoffee(input: DeleteCoffee!): Coffee
 }
 
+"""
+Our schema
+"""
 schema {
   query: Query
   mutation: Mutation
