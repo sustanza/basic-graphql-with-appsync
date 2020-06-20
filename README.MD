@@ -4,4 +4,4 @@
 
 ## Summary
 
-This is a simple project to illustrate how to create a GraphQL API using the AWS Appsync service with Go Lambdas.
+This is a simple project to illustrate how to create a GraphQL API using the AWS Appsync service with Go Lambdas. There is a full write up of this project available on my blog at [https://www.stokedbits.com/graphql-with-aws-appsync-and-go-lambdas/](https://www.stokedbits.com/graphql-with-aws-appsync-and-go-lambdas/).
