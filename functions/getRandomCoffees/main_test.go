@@ -2,17 +2,23 @@ package main
 
 import (
 	"basic-graphql-with-appsync/models"
-	"basic-graphql-with-appsync/shared"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/brianvoe/gofakeit/v4"
 )
+
+// these are a set of string slices to generate
+var Roasts = []string{"Light", "Medium", "Dark"}
+var Process = []string{"Machine Washed", "Dry Process", "Honey Process", "Wet Hulled", "Giling Basah", "Pulp Natural", "Wet Process"}
+var Prefix = []string{"Organic", "Shade Grown", "High Mountain"}
+var Postfix = []string{"Farm", "Coop", "Village"}
 
 func TestGetRandomCoffeesResolver(t *testing.T) {
 	randomCoffeesPayload := RandomCoffeesPayload{
@@ -30,7 +36,7 @@ func TestGetRandomCoffeesResolver(t *testing.T) {
 }
 
 func TestSeedData(t *testing.T) {
-	sess, err := shared.GetAWSSession()
+	sess, err := session.NewSession(&aws.Config{})
 
 	if err != nil {
 		t.Errorf("%s", err.Error())
