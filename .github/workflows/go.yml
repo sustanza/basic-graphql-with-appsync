@@ -35,8 +35,8 @@ jobs:
         aws-secret-access-key: ${{ secrets.GH_ACTIONS_AWS_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: Configure S3 buckets for bins / cf stack
-      run: make configure
+    - name: Create S3 buckets for bins / cf stack
+      run: make s3
       
     - name: Cloudformation package
       if: always()
