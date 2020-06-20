@@ -95,4 +95,4 @@ outputs:
 	@ make describe \
 		| jq -r '.Stacks[0].Outputs'
 
-.PHONY: clean install build build-lambda configure package deploy describe output
+.PHONY: clean install test build build-% debug debug-% env dlv s3 package deploy describe cleanup output
