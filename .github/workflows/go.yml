@@ -8,8 +8,8 @@ on:
 
 jobs:
 
-  build:
-    name: Build
+  build_and_deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
 
@@ -21,18 +21,10 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-
-    - name: Install Mods
-      run: make install
     
     - name: Build Project
       run: make build
-  
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    steps:
-      
+
     - name: Configure AWS credentials from Production account
       uses: aws-actions/configure-aws-credentials@v1
       with:
