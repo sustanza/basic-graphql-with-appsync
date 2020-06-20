@@ -1,4 +1,4 @@
-name: Go
+name: Build and Deploy
 
 on:
   push:
@@ -27,7 +27,12 @@ jobs:
     
     - name: Build Project
       run: make build
-    
+  
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      
     - name: Configure AWS credentials from Production account
       uses: aws-actions/configure-aws-credentials@v1
       with:
