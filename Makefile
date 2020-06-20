@@ -49,11 +49,18 @@ debug:
 	@ $(MAKE) $(foreach FUNCTION,$(LIST_FUNCTIONS),build-$(FUNCTION))
 	@ $(MAKE) dlv
 
+env:
+	echo \
+	"COFFEE_TABLE_NAME=${PROJECT_NAME}-coffee\n"\
+	"AWS_REGION=${AWS_REGION}\n"\
+	"AWS_SDK_LOAD_CONFIG=1\n"\
+	> .env
+
 dlv:
 	$(info Building Task: Dlv)
 	@ env GOARCH=amd64 GOOS=linux go build -o dist/dlv github.com/go-delve/delve/cmd/dlv
 
-configure:
+s3:
 	@ aws s3 mb s3://$(AWS_BUCKET_NAME) --region $(AWS_REGION)
 	@ aws s3 mb s3://$(AWS_STACK_NAME) --region $(AWS_REGION)
 

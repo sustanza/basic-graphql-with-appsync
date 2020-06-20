@@ -2,13 +2,13 @@ package main
 
 import (
 	"basic-graphql-with-appsync/models"
-	"basic-graphql-with-appsync/shared"
 	"log"
 	"math/rand"
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
@@ -29,8 +29,14 @@ type RandomCoffeesResult struct {
 }
 
 func handle(payload RandomCoffeesPayload) (RandomCoffeesResult, error) {
+	randomCoffeesResult := RandomCoffeesResult{}
 
-	sess, err := shared.GetAWSSession()
+	sess, err := session.NewSession(&aws.Config{})
+
+	if err != nil {
+		log.Printf("%v", err)
+		return randomCoffeesResult, err
+	}
 
 	svc := dynamodb.New(sess)
 
@@ -56,8 +62,6 @@ func handle(payload RandomCoffeesPayload) (RandomCoffeesResult, error) {
 	if err != nil {
 		log.Printf("Query API call failed:%s", err.Error())
 	}
-
-	randomCoffeesResult := RandomCoffeesResult{}
 
 	if len(result.Items) == 0 {
 		log.Printf("Result returned by 0 items")
