@@ -90,8 +90,8 @@ Resources:
       TypeName: Query
       FieldName: getCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplateS3Location: ./request-mapping-templates/query-get-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-get-item-by-id.req.vtl
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.res.vtl
 
   AppSyncCreateCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -101,8 +101,8 @@ Resources:
       TypeName: Mutation
       FieldName: createCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-put-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
+      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-put-item-by-id.req.vtl
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.res.vtl
 
   AppSyncAllCoffeeResolver:
     Type: "AWS::AppSync::Resolver"
@@ -112,8 +112,8 @@ Resources:
       TypeName: Query
       FieldName: allCoffees
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.response
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.req.vtl
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-scan-all-items.res.vtl
 
   AppSyncDeleteCoffeeMutationResolver:
     Type: "AWS::AppSync::Resolver"
@@ -123,8 +123,8 @@ Resources:
       TypeName: Mutation
       FieldName: deleteCoffee
       DataSourceName: !GetAtt AppSyncCoffeeDataSourceDynamo.Name
-      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-delete-item-by-id.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.response
+      RequestMappingTemplateS3Location: ./request-mapping-templates/mutation-delete-item-by-id.req.vtl
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/generic-result.res.vtl
 
   AppSyncResolverGetRandomCoffees:
     Type: AWS::AppSync::Resolver
@@ -133,8 +133,8 @@ Resources:
       TypeName: Query
       FieldName: getRandomCoffees
       DataSourceName: !GetAtt AppSyncDataSourceGetRandomCoffeesLambda.Name
-      RequestMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.request
-      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.response
+      RequestMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.req.vtl
+      ResponseMappingTemplateS3Location: ./request-mapping-templates/query-invoke-lambda.res.vtl
 
   #############################################################################################
   #                             IAM Roles and Policies
